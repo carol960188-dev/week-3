@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WeHelp Week 1 & 3 – Bars + Blocks</title>
+<style>
+  :root{
+    --base:20px;
+    --gap:20px;
+    --ink:#111827;
+    --muted:#cbd5e1;
+    --overlay:rgba(0,0,0,.45);
+    --light-blue:#d9ecf6;
+
+    --container-w:1200px;
+    --hero-h:250px;
+    --bar-h:50px;
+    --block-h:180px;
+  }
+  html{font-size:var(--base)}
+  body{
+    margin:0; color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    line-height:1.5; background:#fff; overflow-x:hidden;
+  }
+
+  /* Navbar */
+  .navbar{
+    width:100%; border-bottom:1px solid var(--muted); background:#fff;
+    position:sticky; top:0; z-index:10;
+  }
+  .nav-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    min-height:50px; padding:0 12px; width:100%; box-sizing:border-box;
+  }
+  .brand{font-weight:700}
+  .menu{display:flex; gap:20px; list-style:none; margin:0; padding:0}
+  .menu a{color:inherit; text-decoration:none}
+  .menu a:hover{text-decoration:underline}
+
+  .burger{
+    display:none; width:36px; height:36px;
+    align-items:center; justify-content:center;
+    border:0; background:transparent; cursor:pointer;
+  }
+  .burger svg{width:22px; height:22px}
+
+  /* Drawer */
+  .drawer{
+    position:fixed; top:0; right:0; bottom:0;
+    width:min(80vw, 320px);
+    background:#fff; border-left:1px solid var(--muted);
+    transform:translateX(100%); transition:transform .3s ease;
+    display:flex; flex-direction:column; padding:16px 16px 24px;
+    z-index:9999;
+  }
+  .drawer.open{ transform:translateX(0); }
+  .drawer-close{
+    position:absolute; top:8px; right:8px;
+    width:36px; height:36px; display:grid; place-items:center;
+    border:0; background:transparent; cursor:pointer; z-index:10000;
+  }
+  .drawer-close svg{ width:22px; height:22px; }
+  .drawer-nav{
+    list-style:none; padding:0; margin:40px 0 0;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .drawer-nav a{ color:inherit; text-decoration:none; }
+
+  /* Hero */
+  .hero{
+    width:100%; height:var(--hero-h);
+    display:grid; place-items:center; text-align:center;
+    background:var(--light-blue); border-bottom:1px solid var(--muted);
+  }
+  .hero h1{margin:0; font-size:2em; font-weight:700}
+
+  /* 主內容 */
+  main{margin:0 auto; padding:20px 0; box-sizing:border-box}
+
+  /* Bars */
+  .bars{display:grid; gap:var(--gap); margin-bottom:var(--gap)}
+  .bar{
+    display:flex; align-items:center; gap:var(--gap);
+    height:var(--bar-h); border:1px solid var(--muted);
+    background:#e9f2f8; overflow:hidden;
+  }
+  .bar img{width:80px; height:100%; object-fit:cover; display:block; flex:0 0 80px}
+  .bar-title{margin:0; font-size:.95rem}
+  #bar1{grid-area:bar1} #bar2{grid-area:bar2} #bar3{grid-area:bar3}
+
+  /* Blocks */
+  .blocks{display:grid; gap:var(--gap)}
+  .card{
+    position:relative; height:var(--block-h);
+    border:1px solid var(--muted); background:#fff; overflow:hidden; isolation:isolate;
+  }
+  .card-bg{position:absolute; inset:0; background-size:cover; background-position:center}
+  .caption{
+    position:absolute; left:0; right:0; bottom:0; height:30px;
+    background:var(--overlay); color:#fff; display:flex; align-items:center; justify-content:center;
+    font-weight:600; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;
+  }
+  .star{
+    position:absolute; top:0; right:0; width:22px; height:22px;
+    display:grid; place-items:center; background:rgba(255,255,255,.8);
+    z-index:2; cursor:pointer; user-select:none;
+  }
+  .star svg{width:14px; height:14px; stroke:#0f172a; fill:none; transition:.25s}
+  .star[data-active="true"] svg{stroke:gold; fill:gold}
+
+  /* R3：360–600 */
+  @media (min-width:360px) and (max-width:600px){
+    main{width:90%}
+    .menu{display:none}
+    .burger{display:flex}
+    .bars{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "bar1"
+        "bar2"
+        "bar3";
+    }
+    .blocks{grid-template-columns:1fr}
+  }
+
+  /* R2：601–1200 */
+  @media (min-width:601px) and (max-width:1200px){
+    main{width:90%; max-width:1200px}
+    .menu{display:flex}
+    .burger{display:none}
+    .bars{
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:
+        "bar1 bar2"
+        "bar3 bar3";
+    }
+    .blocks{grid-template-columns:repeat(4,1fr)}
+    .blocks .card:nth-last-child(-n+2){grid-column:span 2}
+  }
+
+  /* R1：1201–1920 */
+  @media (min-width:1201px) and (max-width:1920px){
+    main{width:var(--container-w)}
+    .bars{
+      grid-template-columns:2fr 1fr;
+      grid-template-areas:
+        "bar1 bar1"
+        "bar2 bar3";
+    }
+    .blocks{
+      grid-template-columns:2fr 1fr 1fr 1fr 1fr;
+      grid-template-rows:repeat(2, var(--block-h));
+      grid-auto-flow:column;
+    }
+  }
+</style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar" role="navigation">
+    <div class="nav-inner">
+      <div class="brand">My Website</div>
+      <ul class="menu" aria-label="Primary">
+        <li><a href="#">Item 1</a></li>
+        <li><a href="#">Item 2</a></li>
+        <li><a href="#">Item 3</a></li>
+        <li><a href="#">Item 4</a></li>
+      </ul>
+      <button class="burger" aria-label="Open menu" aria-controls="drawer" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Drawer -->
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <button class="drawer-close" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+    </button>
+    <ul class="drawer-nav">
+      <li><a href="#">Item 1</a></li>
+      <li><a href="#">Item 2</a></li>
+      <li><a href="#">Item 3</a></li>
+      <li><a href="#">Item 4</a></li>
+    </ul>
+  </aside>
+
+  <!-- Hero -->
+  <header class="hero">
+    <h1>Welcome to MyHome</h1>
+  </header>
+
+  <main>
+    <!-- Bars -->
+    <section class="bars" aria-label="Promotions">
+      <article class="bar" id="bar1">
+        <img src="https://picsum.photos/seed/b1/800/600" alt="">
+        <p class="bar-title">Promotion 1</p>
+      </article>
+      <article class="bar" id="bar2">
+        <img src="https://picsum.photos/seed/b2/800/600" alt="">
+        <p class="bar-title">Promotion 2</p>
+      </article>
+      <article class="bar" id="bar3">
+        <img src="https://picsum.photos/seed/b3/800/600" alt="">
+        <p class="bar-title">Promotion 3</p>
+      </article>
+    </section>
+
+    <!-- Blocks（JS 會動態建立 10 張） -->
+    <section class="blocks" aria-label="Content blocks"></section>
+  </main>
+
+  <script>
+    // 星星點擊
+    document.addEventListener('click', (e) => {
+      const star = e.target.closest('.star');
+      if (star) {
+        const active = star.getAttribute('data-active') === 'true';
+        star.setAttribute('data-active', String(!active));
+      }
+    });
+
+    // Drawer 開關
+    const drawer = document.getElementById('drawer');
+    const burger = document.querySelector('.burger');
+    function openDrawer(){ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); burger?.setAttribute('aria-expanded','true'); document.body.style.overflow = 'hidden'; }
+    function closeDrawer(){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); burger?.setAttribute('aria-expanded','false'); document.body.style.overflow = ''; }
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.burger')) { e.preventDefault(); openDrawer(); }
+      else if (e.target.closest('.drawer-close')) { e.preventDefault(); closeDrawer(); }
+      else if (drawer.classList.contains('open') && !e.target.closest('#drawer')) { closeDrawer(); }
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+  </script>
+
+  <!-- ===== Task 3：抓資料 + 合併 + 渲染（無 innerHTML） ===== -->
+  <script>
+  // 來源：優先 jsDelivr，其次 raw.githubusercontent
+  const ENDPOINTS_PAIRS = [
+    [
+      "https://cdn.jsdelivr.net/gh/cwpeng/test@master/assignment-3-1",
+      "https://cdn.jsdelivr.net/gh/cwpeng/test@master/assignment-3-2",
+    ],
+    [
+      "https://raw.githubusercontent.com/cwpeng/test/master/assignment-3-1",
+      "https://raw.githubusercontent.com/cwpeng/test/master/assignment-3-2",
+    ],
+  ];
+
+  // 讀檔→陣列（支援 rows），清 BOM
+  async function fetchToArray(url){
+    const res = await fetch(url, { cache:"no-store" });
+    if(!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    const txt = (await res.text()).replace(/^\uFEFF/,'').trim();
+    const json = JSON.parse(txt);
+    if (Array.isArray(json)) return json;
+    if (json?.rows && Array.isArray(json.rows)) return json.rows;
+    throw new Error("未知格式 keys=" + Object.keys(json).join(","));
+  }
+
+  // 一組失敗就試下一組
+  async function loadPair(){
+    let lastErr;
+    for (const pair of ENDPOINTS_PAIRS){
+      try{
+        const [A,B] = await Promise.all([fetchToArray(pair[0]), fetchToArray(pair[1])]);
+        console.log("✅ 成功來源：", pair[0], "與", pair[1], "各", A.length, B.length);
+        return {A,B};
+      }catch(e){
+        console.warn("⚠️ 來源失敗，改試下一組：", e.message);
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error("無可用來源");
+  }
+
+  // 從 pics 取第一張圖（支援 http/https、/d_upload_ttn/ 相對路徑、黏在一起）
+  function firstPic(pics){
+    const s = String(pics ?? '');
+    // 絕對網址優先
+    const abs = s.match(/https?:\/\/[^\s'"]+?\.(jpg|jpeg|png)(\?[^\s'"]*)?/i);
+    if (abs) return abs[0].replace(/^http:\/\//i,'https://');
+    // 相對路徑
+    const rel = s.match(/\/d_upload_ttn\/[^\s'")]+?\.(jpg|jpeg|png)/i);
+    if (rel) return 'https://www.travel.taipei' + rel[0];
+    // 黏在一起的相對路徑，切第一段
+    const chunks = s.split('/d_upload_ttn/').filter(Boolean);
+    if (chunks.length){
+      const take = chunks[0].match(/^[^\s'")]+?\.(jpg|jpeg|png)/i);
+      if (take) return 'https://www.travel.taipei/d_upload_ttn/' + take[0];
+    }
+    return null;
+  }
+
+  // 建立 serial→img 對照表
+  function buildPicMap(B){
+    const map = new Map();
+    for (const r of B){
+      const serial = String(r.serial ?? '').trim();
+      if (!serial || map.has(serial)) continue;
+      const img = firstPic(r.pics);
+      if (img) map.set(serial, img);
+    }
+    return map;
+  }
+
+  // 合併：A 提 name+serial，B 提 serial→pic；同名去重
+  function mergeItems(A,B){
+    const picMap = buildPicMap(B);
+    const seen = new Set();
+    const items = [];
+
+    for (const r of A){
+      const name = String(r.sname ?? r.stitle ?? r.title ?? r.name ?? '').trim();
+      if (!name || seen.has(name)) continue;
+
+      const serial = String(r.serial ?? '').trim();
+      let img = picMap.get(serial) || null;
+
+      // 備援：掃 A 的字串欄位找第一張圖（很少用到，但保險）
+      if (!img){
+        for (const k in r){
+          if (typeof r[k] === 'string'){
+            const hit = firstPic(r[k]);
+            if (hit){ img = hit; break; }
+          }
+        }
+      }
+
+      if (!img) img = `https://picsum.photos/seed/tt-${items.length+1}/800/600`;
+      items.push({ name, firstImage: img });
+      seen.add(name);
+    }
+    return items;
+  }
+
+  // DOM helpers（不使用 innerHTML）
+  function clearChildren(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+  function renderBars(items){
+    ["bar1","bar2","bar3"].forEach((id,i)=>{
+      const el = document.getElementById(id); if(!el) return;
+      const img = el.querySelector("img");
+      const title = el.querySelector(".bar-title");
+      const d = items[i]; if(!d) return;
+      if (img && d.firstImage) img.src = d.firstImage;
+      if (title) title.textContent = d.name || `景點 ${i+1}`;
+    });
+  }
+  function renderBlocks(items){
+    const root = document.querySelector(".blocks"); if(!root) return;
+    clearChildren(root);
+    items.forEach((d,i)=>{
+      const card = document.createElement("div"); card.className="card";
+      const bg = document.createElement("div"); bg.className="card-bg";
+      if (d.firstImage) bg.style.backgroundImage = `url('${d.firstImage}')`;
+
+      const star = document.createElement("div"); star.className="star"; star.setAttribute("data-active","false");
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("viewBox","0 0 24 24"); svg.setAttribute("fill","none"); svg.setAttribute("stroke","#0f172a"); svg.setAttribute("stroke-width","1.5");
+      const path = document.createElementNS(svgNS, "path");
+      path.setAttribute("d","M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z");
+      svg.appendChild(path); star.appendChild(svg);
+
+      const cap = document.createElement("div"); cap.className="caption"; cap.textContent = d.name || `景點 ${i+1}`;
+
+      card.appendChild(bg); card.appendChild(star); card.appendChild(cap);
+      root.appendChild(card);
+    });
+  }
+
+  // 主流程
+  document.addEventListener("DOMContentLoaded", async ()=>{
+    try{
+      const {A,B} = await loadPair();
+      const items = mergeItems(A,B);
+      window.__norm = items; // 方便 Console 驗證
+
+      renderBars(items.slice(0,3));
+      renderBlocks(items.slice(3,13));
+
+      console.log("🎉 渲染完成；前 3 筆：", items.slice(0,3));
+    }catch(e){
+      console.error("❌ 載入/解析失敗：", e);
+    }
+  });
+  </script>
+</body>
+</html>
