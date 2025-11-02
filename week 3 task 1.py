@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import urllib.request
 import json
 import re
@@ -10,16 +7,16 @@ import ssl
 import os
 import traceback
 
-# ================== 可調參數 ==================
-VERIFY_SSL = True  # 若遇到 CERTIFICATE_VERIFY_FAILED，可改成 False 暫時略過驗證
+
+VERIFY_SSL = True  
 OUT_HOTELS = "hotels.csv"
 OUT_DISTRICTS = "districts.csv"
-# ============================================
+
 
 URL_ZH = "https://resources-wehelp-taiwan-b986132eca78c0b5eeb736fc03240c2ff8b7116.gitlab.io/hotels-ch"
 URL_EN = "https://resources-wehelp-taiwan-b986132eca78c0b5eeb736fc03240c2ff8b7116.gitlab.io/hotels-en"
 
-# ----------------- 工具：下載 -----------------
+
 def fetch_text(url: str) -> str:
     if VERIFY_SSL:
         with urllib.request.urlopen(url) as resp:
@@ -31,9 +28,8 @@ def fetch_text(url: str) -> str:
             charset = resp.headers.get_content_charset() or "utf-8"
             return resp.read().decode(charset, errors="replace")
 
-# ------------- 工具：解析為 list[dict] -------------
+
 def parse_payload_to_list(payload: str):
-    # 1) 先嘗試 JSON 直讀
     try:
         data = json.loads(payload)
         if isinstance(data, list):
@@ -45,7 +41,6 @@ def parse_payload_to_list(payload: str):
     except json.JSONDecodeError:
         pass
 
-    # 2) 嘗試從 HTML/script 抓出 JSON 陣列
     m = re.search(r"(\[\s*{.*?}\s*\])", payload, flags=re.DOTALL)
     if m:
         try:
@@ -53,7 +48,6 @@ def parse_payload_to_list(payload: str):
         except json.JSONDecodeError:
             pass
 
-    # 3) 嘗試抓 "data": [ ... ]
     m = re.search(r'"data"\s*:\s*(\[\s*{.*?}\s*\])', payload, flags=re.DOTALL)
     if m:
         try:
@@ -61,9 +55,8 @@ def parse_payload_to_list(payload: str):
         except json.JSONDecodeError:
             pass
 
-    raise ValueError("無法解析來源內容為清單（非 JSON 或無可識別陣列）")
+    raise ValueError
 
-# ------------- 除錯檢視：peek 首筆 -------------
 def peek_sample(tag, data):
     print(f"=== Peek {tag} ===", flush=True)
     print("type:", type(data), "len:", (len(data) if hasattr(data, "__len__") else "N/A"), flush=True)
@@ -79,7 +72,6 @@ def peek_sample(tag, data):
             print("First item preview:", str(data[0])[:200], flush=True)
     print("===============", flush=True)
 
-# ------------- 正規化一筆資料 -------------
 def norm_record(rec: dict, lang: str) -> dict:
     import re
 
@@ -94,7 +86,6 @@ def norm_record(rec: dict, lang: str) -> dict:
             "_raw_name": None
         }
 
-    # 大小寫不敏感的 key 映射
     lower_map = { (k.lower() if isinstance(k, str) else k): k for k in rec.keys() }
 
     def get_any(*aliases):
@@ -107,52 +98,44 @@ def norm_record(rec: dict, lang: str) -> dict:
                     return val
         return None
 
-    # 共同 id（兩邊都有 _id）
     id_ = get_any("_id", "id", "Id", "ID", "serial_no", "serialNo", "HotelID", "hotel_id")
 
-    # === 名稱 ===
     if lang == "zh":
         name = get_any("旅宿名稱",
                        "name", "Name", "hotel_name", "HotelName", "Hotel_Name",
                        "旅館名稱", "中文名稱", "名稱",
                        "chs_name", "name_zh", "nameZh", "nameCn", "nameCN", "name_ch",
                        "ChineseName")
-    else:  # lang == "en"
-        name = get_any("hotel name",            # ✅ 你提供的 EN 實際鍵名
+    else:  
+        name = get_any("hotel name",            
                        "EnglishName", "name", "Name", "HotelName", "hotel_name")
 
-    # === 地址 ===
     if lang == "zh":
         address = get_any("地址",
                           "address", "Address", "addr", "Addr", "HotelAddress",
                           "中文地址", "chs_address", "address_zh", "address_ch")
     else:
-        address = get_any("address",            # ✅ EN 實際鍵名（小寫）
+        address = get_any("address",            
                           "EnglishAddress", "HotelAddress", "addr", "Addr")
-
-    # === 電話 ===
     if lang == "zh":
         phone = get_any("電話或手機號碼",
                         "phone", "Phone", "TEL", "Tel", "telephone", "Telephone", "連絡電話", "聯絡電話")
     else:
-        phone = get_any("tel",                  # ✅ EN 實際鍵名
+        phone = get_any("tel",                
                         "telephone", "Telephone", "phone", "Phone", "TEL", "Tel")
 
-    # === 房間數 ===
     if lang == "zh":
         rooms_raw = get_any("房間數",
                             "rooms", "Rooms", "roomCount", "room_count",
                             "總房間數", "客房數", "total_rooms", "TotalRooms", "TotalNumberOfRooms",
                             "rooms_total", "room_total", "RoomNumber", "RoomCount", "RoomTotal")
     else:
-        rooms_raw = get_any("the total number of rooms",   # ✅ EN 實際鍵名
+        rooms_raw = get_any("the total number of rooms",   
                             "total number of rooms", "TotalRooms", "total_rooms",
                             "rooms", "Rooms", "roomCount", "room_count")
 
-    # === 行政區 ===
     district = get_any("district", "District", "行政區", "鄉鎮市區", "zone", "area")
     if not district and lang == "zh":
-        # 從中文地址抽台北各區
         if isinstance(address, str):
             m = re.search(r"(中正區|大同區|中山區|松山區|大安區|萬華區|信義區|士林區|北投區|內湖區|南港區|文山區)", address)
             if m:
@@ -177,7 +160,6 @@ def norm_record(rec: dict, lang: str) -> dict:
     }
 
 
-# ------------- 名稱規範化（比對用） -------------
 def normalize_name_key(name: str) -> str:
     s = (name or "")
     s = s.replace("\u3000", " ")
@@ -185,7 +167,6 @@ def normalize_name_key(name: str) -> str:
     s = re.sub(r"[．\.\-–—_•·,，、!！()?？（）\[\]【】]", "", s)
     return s
 
-# ------------- 合併中英資料（以中文為主） -------------
 def merge_cn_en(cn_list, en_list):
     def build_index_by_id_or_name(rows):
         by_id, by_name = {}, {}
@@ -231,7 +212,6 @@ def merge_cn_en(cn_list, en_list):
         merged.append(out)
     return merged
 
-# ================== 主流程 ==================
 def main():
     print(">>> 程式開始執行", flush=True)
     print(">>> 正在執行檔案：", os.path.abspath(__file__), flush=True)
@@ -256,7 +236,6 @@ def main():
         traceback.print_exc()
         return
 
-    # 檢視原始結構（方便對鍵名）
     print(">>> Peek 原始結構", flush=True)
     peek_sample("ZH", zh_list_raw)
     peek_sample("EN", en_list_raw)
@@ -269,7 +248,6 @@ def main():
     merged = merge_cn_en(zh_norm, en_norm)
     print(">>> 合併完成，筆數：", len(merged), flush=True)
 
-    # ===== 輸出 hotels.csv（你指定的格式）=====
     print(f">>> 輸出 {OUT_HOTELS} ...", flush=True)
     with open(OUT_HOTELS, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
@@ -285,7 +263,6 @@ def main():
             ])
     print(">>> hotels.csv 完成", flush=True)
 
-    # ===== 依 district 聚合，輸出 districts.csv =====
     print(">>> 聚合 districts...", flush=True)
     agg = {}
     for r in merged:
@@ -304,7 +281,6 @@ def main():
             writer.writerow([dist, v["hotel_count"], v["total_rooms"]])
     print(">>> districts.csv 完成", flush=True)
 
-    # ===== Debug 統計 =====
     missing_ch_name = sum(1 for r in merged if not r.get("name_ch"))
     missing_en_name = sum(1 for r in merged if not r.get("name_en"))
     missing_rooms   = sum(1 for r in merged if r.get("rooms") is None)
